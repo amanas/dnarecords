@@ -4,6 +4,7 @@
 ![example workflow](https://github.com/amanas/dnarecords/actions/workflows/ci-cd.yml/badge.svg)
 [![codecov](https://codecov.io/gh/amanas/dnarecords/branch/main/graph/badge.svg)](https://codecov.io/gh/amanas/dnarecords)
 ![pylint Score](https://mperlet.github.io/pybadge/badges/9.97.svg)
+[![semantic-release: angular](https://img.shields.io/badge/semantic--release-angular-e10079?logo=semantic-release)](https://github.com/semantic-release/semantic-release)
 
 **Genomics data ML ready.**
 
@@ -29,7 +30,9 @@ For that reason, we recommend following these installation tips.
 $ pip install dnarecords
 ```
 
-### **On a Hail cluster or summiting a job to it**
+For further details (or any trouble), review [Local environments](LOCAL_ENVS.md) section.
+
+### **On a Hail cluster or submitting a job to it**
 
 You will already have Pyspark installed and will not intend to install Tensorflow. 
 
@@ -42,7 +45,7 @@ $ /opt/conda/miniconda3/bin/python -m pip install dnarecords --no-deps
 ```
 *Note: assuming Hail python executable is /opt/conda/miniconda3/bin/python* 
 
-### **On a Tensorflow environment or summiting a job to it**
+### **On a Tensorflow environment or submitting a job to it**
 
 You will already have Tensorflow installed and will not intend to install Pyspark. 
 

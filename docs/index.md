@@ -6,6 +6,7 @@
 :hidden:
 
 example.ipynb
+local_envs.md
 changelog.md
 contributing.md
 conduct.md
