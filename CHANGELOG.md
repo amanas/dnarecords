@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.2.1 (2022-05-19)
+### Fix
+* Static block size rather than dynamic ([`6b81af0`](https://github.com/amanas/dnarecords/commit/6b81af01443d62417f9894a418b2562f89859068))
+
 ## v0.2.0 (2022-05-19)
 ### Feature
 * First release of dnarecords! ([`b12fa05`](https://github.com/amanas/dnarecords/commit/b12fa055859b1f92bddd2cf6707c50bbcf1d8593))
