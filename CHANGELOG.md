@@ -2,6 +2,18 @@
 
 <!--next-version-placeholder-->
 
+## v0.2.0 (2022-05-19)
+### Feature
+* First release of dnarecords! ([`b12fa05`](https://github.com/amanas/dnarecords/commit/b12fa055859b1f92bddd2cf6707c50bbcf1d8593))
+* First release of dnarecords! ([`688e028`](https://github.com/amanas/dnarecords/commit/688e028d62706cb32ab6563531bc36bfe791a381))
+
+### Fix
+* Get rid of pypi's 'Filename has been previously used' ([`fe83729`](https://github.com/amanas/dnarecords/commit/fe8372949a8181e8cb75f89536e09696f312c9f9))
+* Fixed bug related to save variant keys as pandas dataframe ([`5ce97bb`](https://github.com/amanas/dnarecords/commit/5ce97bb05939b8ca8f48c208e277412544c12d0e))
+
+### Documentation
+* Improved documentation for dev/local environments ([`28679f0`](https://github.com/amanas/dnarecords/commit/28679f05940a79687bc01431019e3dbb8c8e4240))
+
 ## v0.1.2 (2022-05-19)
 ### Fix
 * Fixed bug related to save variant keys as pandas dataframe ([`5ce97bb`](https://github.com/amanas/dnarecords/commit/5ce97bb05939b8ca8f48c208e277412544c12d0e))
