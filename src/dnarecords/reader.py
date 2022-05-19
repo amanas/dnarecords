@@ -84,6 +84,16 @@ class DNARecordsReader:
             return pd.concat(pd.read_parquet(f) for f in files)
         return None
 
+    @staticmethod
+    def _pandas_safe_read_json(path):
+        import pandas as pd
+        import tensorflow as tf
+
+        files = tf.io.gfile.glob(f'{path}/*.json')
+        if files:
+            return pd.concat(pd.read_json(f) for f in files)
+        return None
+
     def metadata(self) -> Dict[str, DataFrame]:
         """Gets the metadata associated to the DNARecords dataset as a dictionary of names to pandas DataFrames.
 
@@ -99,8 +109,10 @@ class DNARecordsReader:
         result = {}
         tree = dr.helper.DNARecordsUtils.dnarecords_tree(self._dnarecords_path)
         for k, v in tree.items():
-            if k in ['skeys', 'vkeys', 'swpfs', 'vwpfs', 'swrfs', 'vwrfs', 'swpsc', 'vwpsc', 'swrsc', 'vwrsc']:
+            if k in ['skeys', 'vkeys', 'swpfs', 'vwpfs', 'swrfs', 'vwrfs']:
                 result.update({k: self._pandas_safe_read_parquet(v)})
+            if k in ['swpsc', 'vwpsc', 'swrsc', 'vwrsc']:
+                result.update({k: self._pandas_safe_read_json(v)})
         return result
 
     def datafiles(self) -> Dict[str, List[str]]:
@@ -132,9 +144,8 @@ class DNARecordsReader:
     def _sw_decoder(dnarecords, schema, gzip):
         import json
         import tensorflow as tf
-
         one_proto = next(iter(tf.data.TFRecordDataset(dnarecords, 'GZIP' if gzip else None)))
-        swrsc_dict = {f['name']: f for f in schema}
+        swrsc_dict = {f['fields']['name']: f['fields'] for _, f in schema.iterrows()}
         features = {'key': tf.io.FixedLenFeature([], tf.int64)}
         for indices_field in [field for field in swrsc_dict.keys() if field.endswith('indices')]:
             feature_name = indices_field.replace('_indices', '')
@@ -152,7 +163,7 @@ class DNARecordsReader:
         import tensorflow as tf
 
         one_proto = next(iter(tf.data.TFRecordDataset(dnarecords, 'GZIP' if gzip else None)))
-        vwrsc_dict = {f['name']: f for f in schema}
+        vwrsc_dict = {f['fields']['name']: f['fields'] for _, f in schema.iterrows()}
         values_type = DNARecordsReader._types_dict()[json.loads(vwrsc_dict['values']['type'])['elementType']]
         dense_shape = tf.io.parse_example(one_proto, {'dense_shape': tf.io.FixedLenFeature([], tf.int64)})[
             'dense_shape']
@@ -193,7 +204,7 @@ class DNARecordsReader:
         schema = self.metadata()['swrsc']
         if schema is None or not dnarecords:
             raise Exception(f"No DNARecords found at {self._dnarecords_path}/...")
-        decoder = self._sw_decoder(dnarecords, schema.fields[0], self._gzip)
+        decoder = self._sw_decoder(dnarecords, schema, self._gzip)
         return self._dataset(dnarecords, decoder, num_parallel_reads, num_parallel_calls, deterministic, drop_remainder,
                              batch_size, buffer_size)
 
@@ -219,7 +230,7 @@ class DNARecordsReader:
         schema = self.metadata()['vwrsc']
         if schema is None or not dnarecords:
             raise Exception(f"No DNARecords found at {self._dnarecords_path}/...")
-        decoder = self._vw_decoder(dnarecords, schema.fields[0], self._gzip)
+        decoder = self._vw_decoder(dnarecords, schema, self._gzip)
         return self._dataset(dnarecords, decoder, num_parallel_reads, num_parallel_calls, deterministic, drop_remainder,
                              batch_size, buffer_size)
 
@@ -311,8 +322,10 @@ class DNASparkReader:
         tree = dr.helper.DNARecordsUtils.dnarecords_tree(self._dnarecords_path)
         spark = dr.helper.DNARecordsUtils.spark_session()
         for k, v in tree.items():
-            if k in ['skeys', 'vkeys', 'swpfs', 'vwpfs', 'swrfs', 'vwrfs', 'swpsc', 'vwpsc', 'swrsc', 'vwrsc']:
+            if k in ['skeys', 'vkeys', 'swpfs', 'vwpfs', 'swrfs', 'vwrfs']:
                 result.update({k: self._spark_safe_load(spark.read.format("parquet"), v)})
+            if k in ['swpsc', 'vwpsc', 'swrsc', 'vwrsc']:
+                result.update({k: self._spark_safe_load(spark.read.format("json"), v)})
         return result
 
     def sample_wise_dnarecords(self) -> 'DataFrame':

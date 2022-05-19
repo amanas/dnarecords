@@ -111,9 +111,10 @@ class DNARecordsWriter:
         self._skeys = self._mt.key_cols_by().cols().to_spark().withColumnRenamed('j', 'key').cache()
 
     def _set_chrom_ranges(self):
-        gdf = self._vkeys.toPandas()[['locus.contig', 'key']].groupby('locus.contig', as_index=False)
-        gdf = gdf.agg(start=('key', 'min'), end=('key', 'max'))
-        self._chrom_ranges = {r['locus.contig']: [r['start'], r['end']] for i, r in gdf.iterrows()}
+        from pyspark.sql import functions as F
+        gdf = self._vkeys.select('`locus.contig`', 'key').groupby('`locus.contig`')
+        gdf = gdf.agg(F.min('key').alias('start'), F.max('key').alias('end'))
+        self._chrom_ranges = {r['locus.contig']: [r['start'], r['end']] for i, r in gdf.toPandas().iterrows()}
 
     def _update_vkeys_by_chrom_ranges(self):
         from dnarecords.helper import DNARecordsUtils
@@ -129,11 +130,13 @@ class DNARecordsWriter:
         self._mt = self._mt.select_globals().select_rows().select_cols().select_entries('v')
 
     def _filter_out_undefined_entries(self):
-        import hail as hl
+        from dnarecords.helper import DNARecordsUtils
+        hl = DNARecordsUtils.init_hail()
         self._mt = self._mt.filter_entries(hl.is_defined(self._mt.v))
 
     def _filter_out_zeroes(self):
-        import hail as hl
+        from dnarecords.helper import DNARecordsUtils
+        hl = DNARecordsUtils.init_hail()
         self._mt = self._mt.filter_entries(0 != hl.coalesce(self._mt.v, 0))
 
     def _set_max_nrows_ncols(self):
@@ -163,7 +166,8 @@ class DNARecordsWriter:
 
     def _set_ij_blocks(self):
         import re
-        import hail as hl
+        from dnarecords.helper import DNARecordsUtils
+        hl = DNARecordsUtils.init_hail()
         all_blocks = [p for p in hl.hadoop_ls(f'{self._kv_blocks_path}/*') if p['is_dir']]
         self._i_blocks = {re.search(r'ib=(\d+)', p['path']).group(1) for p in all_blocks}
         self._j_blocks = {re.search(r'jb=(\d+)', p['path']).group(1) for p in all_blocks}
@@ -280,8 +284,8 @@ class DNARecordsWriter:
             if gzip:
                 df_writer = df_writer.option("compression", "gzip")
         df_writer.save(output)
-        sc_writer = spark.read.json(spark.sparkContext.parallelize([df.schema.json()])).repartition(1).write
-        sc_writer.mode(write_mode).parquet(output_schema)
+        sc_writer = spark.read.json(spark.sparkContext.parallelize([df.schema.json()])).coalesce(1).write
+        sc_writer.mode(write_mode).format('json').save(output_schema)
 
     @staticmethod
     def _write_key_files(source, output, tfrecord_format, write_mode):
@@ -294,7 +298,7 @@ class DNARecordsWriter:
         else:
             reader = spark.read.format("parquet")
         df = reader.load(source).withColumn("path", F.regexp_extract(F.input_file_name(), f"(.*){source}/(.*)", 2))
-        df.select('key', 'path').repartition(1).write.mode(write_mode).parquet(output)
+        df.select('key', 'path').write.mode(write_mode).parquet(output)
 
     # pylint: disable=too-many-arguments
     # It is reasonable in this case.
@@ -365,5 +369,5 @@ class DNARecordsWriter:
                                        gzip, False)
                 self._write_key_files(otree['swpar'], otree['swpfs'], False, write_mode)
 
-        self._vkeys.repartition(1).write.mode(write_mode).parquet(otree['vkeys'])
-        self._skeys.repartition(1).write.mode(write_mode).parquet(otree['skeys'])
+        self._vkeys.write.mode(write_mode).parquet(otree['vkeys'])
+        self._skeys.write.mode(write_mode).parquet(otree['skeys'])
