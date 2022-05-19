@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dnarecords"
-version = "0.1.1"
+version = "0.1.2"
 description = "Genomics data ML ready"
 authors = ["Atray Dixit, Andrés Mañas Mañas, Lucas Seninge"]
 license = "MIT"
