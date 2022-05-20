@@ -2,6 +2,8 @@ import re
 import pandas as pd
 import pytest
 import dnarecords as dr
+import glob
+from itertools import groupby
 
 
 def check_dosage_sample_wise(skeys, vkeys, mt, dna, approx):
@@ -116,3 +118,11 @@ def test_raises_exception_when_not_tfrecord_format_and_not_parquet_format(dosage
     with pytest.raises(Exception) as ex_info:
         dr.writer.DNARecordsWriter(dosage_1kg.dosage).write(dosage_output, tfrecord_format=False, parquet_format=False)
     assert ex_info.match(r"^At least one of tfrecord_format, parquet_format must be True$")
+
+
+def test_generates_single_file_per_block(dosage_output):
+    kv_blocks = dosage_output.replace('/output', '/staging/kv-blocks')
+    pairs = [f.rsplit('/', 1) for f in glob.glob(f"{kv_blocks}/*/*/*.parquet")]
+    for r, g in groupby(pairs, key=lambda t: t[0]):
+        files = list(g)
+        assert len(list(files)) == 1, "kv-blocks with more than one file exists"
