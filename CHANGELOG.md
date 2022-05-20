@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.2.2 (2022-05-20)
+### Fix
+* Fixed scalability issues related with too many small files generated ([`b4ba095`](https://github.com/amanas/dnarecords/commit/b4ba09581e803f3117f5dba4ec5751ee939c03eb))
+
+### Performance
+* Added metadata taste functionality to the reader. Improved performace of block transposition ([`26b2353`](https://github.com/amanas/dnarecords/commit/26b2353c28fc5642c84002002c51d0363ec84c85))
+
 ## v0.2.1 (2022-05-19)
 ### Fix
 * Static block size rather than dynamic ([`6b81af0`](https://github.com/amanas/dnarecords/commit/6b81af01443d62417f9894a418b2562f89859068))
