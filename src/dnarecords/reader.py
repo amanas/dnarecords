@@ -75,13 +75,22 @@ class DNARecordsReader:
                 'double': tf.float32}
 
     @staticmethod
-    def _pandas_safe_read_parquet(path):
+    def _pandas_safe_read_parquet(path, columns, taste):
         import pandas as pd
         import tensorflow as tf
 
         files = tf.io.gfile.glob(f'{path}/*.parquet')
         if files:
-            return pd.concat(pd.read_parquet(f) for f in files)
+            if columns:
+                if taste:
+                    return pd.read_parquet(files[0], columns=columns)
+                else:
+                    return pd.concat(pd.read_parquet(f, columns=columns) for f in files)
+            if not columns:
+                if taste:
+                    return pd.read_parquet(files[0])
+                else:
+                    return pd.concat(pd.read_parquet(f) for f in files)
         return None
 
     @staticmethod
@@ -94,11 +103,14 @@ class DNARecordsReader:
             return pd.concat(pd.read_json(f) for f in files)
         return None
 
-    def metadata(self) -> Dict[str, DataFrame]:
+    def metadata(self, vkeys_columns: List[str] = None, skeys_columns: List[str] = None, taste: bool = False) -> Dict[str, DataFrame]:
         """Gets the metadata associated to the DNARecords dataset as a dictionary of names to pandas DataFrames.
 
         :rtype: Dict[str, DataFrame].
         :return: the metadata associated to the DNARecords as a dictionary of names to pandas DataFrames.
+        :param vkeys_columns: columns to return from variant metadata files (potentially big files). Defaults to None (all columns).
+        :param skeys_columns: columns to return from sample metadata files (potentially big files). Defaults to None (all columns).
+        :param taste: The full metadata DataFrames could be huge, wo you can get a taste of them without going into memory issues. With that, decide wich columns to get metadata for. Defaults to False.
 
         See Also
         --------
@@ -109,8 +121,12 @@ class DNARecordsReader:
         result = {}
         tree = dr.helper.DNARecordsUtils.dnarecords_tree(self._dnarecords_path)
         for k, v in tree.items():
-            if k in ['skeys', 'vkeys', 'swpfs', 'vwpfs', 'swrfs', 'vwrfs']:
-                result.update({k: self._pandas_safe_read_parquet(v)})
+            if k == 'skeys':
+                result.update({k: self._pandas_safe_read_parquet(v, skeys_columns, taste)})
+            if k == 'vkeys':
+                result.update({k: self._pandas_safe_read_parquet(v, vkeys_columns, taste)})
+            if k in ['swpfs', 'vwpfs', 'swrfs', 'vwrfs']:
+                result.update({k: self._pandas_safe_read_parquet(v, None, False)})
             if k in ['swpsc', 'vwpsc', 'swrsc', 'vwrsc']:
                 result.update({k: self._pandas_safe_read_json(v)})
         return result

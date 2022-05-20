@@ -62,7 +62,7 @@ class DNARecordsWriter:
         ...
 
     :param expr: a Hail expression. Currently, ony expressions coercible to numeric are supported
-    :param block_size: block size to handle transposing the matrix
+    :param block_size: entries per block in the internal operations
     :param staging: path to staging directory to use for intermediate data. Default: /tmp/dnarecords/staging.
     """
     from typing import TYPE_CHECKING
@@ -75,12 +75,13 @@ class DNARecordsWriter:
     _j_blocks: set
     _nrows: int
     _ncols: int
+    _sparsity: float
     _chrom_ranges: dict
     _mt: 'MatrixTable'
     _skeys: 'DataFrame'
     _vkeys: 'DataFrame'
 
-    def __init__(self, expr: 'Expression', block_size=(10000, 10000), staging: str = '/tmp/dnarecords/staging'):
+    def __init__(self, expr: 'Expression', block_size: int = int(1e6), staging: str = '/tmp/dnarecords/staging'):
         self._assert_expr_type(expr)
         self._expr = expr
         self._block_size = block_size
@@ -144,13 +145,26 @@ class DNARecordsWriter:
         self._nrows = self._mt.count_rows()
         self._ncols = self._mt.count_cols()
 
+    def _set_sparsity(self):
+        mts = self._mt.head(10000, None)
+        entries = mts.key_cols_by().key_rows_by().entries().to_spark().filter('v is not null').count()
+        self._sparsity = entries / (mts.count_rows() * mts.count_cols())
+
+    def _get_block_size(self):
+        import math
+        M, N, S = self._nrows + 1, self._ncols + 1, self._sparsity + 1e-6
+        B = self._block_size / S
+        m = math.ceil(math.sqrt(B * M / N))
+        n = math.ceil(math.sqrt(B * N / M))
+        return m, n
+
     def _build_ij_blocks(self):
         import pyspark.sql.functions as F
-        m, n = self._block_size
+        m, n = self._get_block_size()
         df = self._mt.key_cols_by().key_rows_by().entries().to_spark().filter('v is not null')
-        df = df.withColumn('ib', F.floor(F.col('i')/F.lit(m)))
-        df = df.withColumn('jb', F.floor(F.col('j')/F.lit(n)))
-        df.write.partitionBy('ib', 'jb').mode('overwrite').parquet(self._kv_blocks_path)
+        df = df.withColumn('ib', F.expr(f"i div {m}"))
+        df = df.withColumn('jb', F.expr(f"j div {n}"))
+        df.repartition('ib', 'jb').write.partitionBy('ib', 'jb').mode('overwrite').parquet(self._kv_blocks_path)
 
     def _set_ij_blocks(self):
         import re
@@ -266,6 +280,7 @@ class DNARecordsWriter:
         if tfrecord_format:
             df_writer = df_writer.format("tfrecord").option("recordType", "Example")
             if gzip:
+                # Needs huge overhead memory
                 df_writer = df_writer.option("codec", "org.apache.hadoop.io.compress.GzipCodec")
         else:
             df_writer = df_writer.format('parquet')
@@ -319,20 +334,25 @@ class DNARecordsWriter:
         if not tfrecord_format and not parquet_format:
             raise Exception('At least one of tfrecord_format, parquet_format must be True')
 
+        otree = DNARecordsUtils.dnarecords_tree(output)
+
         self._set_mt()
         self._index_mt()
         self._set_vkeys_skeys()
         self._set_chrom_ranges()
         self._update_vkeys_by_chrom_ranges()
+
+        self._vkeys.write.mode(write_mode).parquet(otree['vkeys'])
+        self._skeys.write.mode(write_mode).parquet(otree['skeys'])
+
         self._select_ijv()
         self._filter_out_undefined_entries()
         if sparse:
             self._filter_out_zeroes()
         self._set_max_nrows_ncols()
+        self._set_sparsity()
         self._build_ij_blocks()
         self._set_ij_blocks()
-
-        otree = DNARecordsUtils.dnarecords_tree(output)
 
         if variant_wise:
             self._build_dna_blocks('i')
@@ -355,6 +375,3 @@ class DNARecordsWriter:
                 self._write_dnarecords(otree['swpar'], otree['swpsc'], f'{self._sw_dna_staging}/*', write_mode,
                                        gzip, False)
                 self._write_key_files(otree['swpar'], otree['swpfs'], False, write_mode)
-
-        self._vkeys.write.mode(write_mode).parquet(otree['vkeys'])
-        self._skeys.write.mode(write_mode).parquet(otree['skeys'])
