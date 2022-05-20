@@ -280,6 +280,7 @@ class DNARecordsWriter:
         if tfrecord_format:
             df_writer = df_writer.format("tfrecord").option("recordType", "Example")
             if gzip:
+                # Needs huge overhead memory
                 df_writer = df_writer.option("codec", "org.apache.hadoop.io.compress.GzipCodec")
         else:
             df_writer = df_writer.format('parquet')
@@ -333,11 +334,17 @@ class DNARecordsWriter:
         if not tfrecord_format and not parquet_format:
             raise Exception('At least one of tfrecord_format, parquet_format must be True')
 
+        otree = DNARecordsUtils.dnarecords_tree(output)
+
         self._set_mt()
         self._index_mt()
         self._set_vkeys_skeys()
         self._set_chrom_ranges()
         self._update_vkeys_by_chrom_ranges()
+
+        self._vkeys.write.mode(write_mode).parquet(otree['vkeys'])
+        self._skeys.write.mode(write_mode).parquet(otree['skeys'])
+
         self._select_ijv()
         self._filter_out_undefined_entries()
         if sparse:
@@ -346,8 +353,6 @@ class DNARecordsWriter:
         self._set_sparsity()
         self._build_ij_blocks()
         self._set_ij_blocks()
-
-        otree = DNARecordsUtils.dnarecords_tree(output)
 
         if variant_wise:
             self._build_dna_blocks('i')
@@ -370,6 +375,3 @@ class DNARecordsWriter:
                 self._write_dnarecords(otree['swpar'], otree['swpsc'], f'{self._sw_dna_staging}/*', write_mode,
                                        gzip, False)
                 self._write_key_files(otree['swpar'], otree['swpfs'], False, write_mode)
-
-        self._vkeys.write.mode(write_mode).parquet(otree['vkeys'])
-        self._skeys.write.mode(write_mode).parquet(otree['skeys'])
