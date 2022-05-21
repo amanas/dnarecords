@@ -116,7 +116,8 @@ class DNARecordsWriter:
         from pyspark.sql import functions as F
         gdf = self._vkeys.select('`locus.contig`', 'key').groupby('`locus.contig`')
         gdf = gdf.agg(F.min('key').alias('start'), F.max('key').alias('end'))
-        self._chrom_ranges = {r['locus.contig']: [r['start'], r['end']] for i, r in gdf.toPandas().iterrows()}
+        self._chrom_ranges = {r['locus.contig'].replace('chr', ''): [r['start'], r['end']] for i, r in
+                              gdf.toPandas().iterrows()}
 
     def _update_vkeys_by_chrom_ranges(self):
         from dnarecords.helper import DNARecordsUtils
@@ -356,6 +357,11 @@ class DNARecordsWriter:
 
         if variant_wise:
             self._build_dna_blocks('i')
+
+        if sample_wise:
+            self._build_dna_blocks('j')
+
+        if variant_wise:
             if tfrecord_format:
                 self._write_dnarecords(otree['vwrec'], otree['vwrsc'], f'{self._vw_dna_staging}/*', write_mode, gzip,
                                        True)
@@ -366,7 +372,6 @@ class DNARecordsWriter:
                 self._write_key_files(otree['vwpar'], otree['vwpfs'], False, write_mode)
 
         if sample_wise:
-            self._build_dna_blocks('j')
             if tfrecord_format:
                 self._write_dnarecords(otree['swrec'], otree['swrsc'], f'{self._sw_dna_staging}/*', write_mode,
                                        gzip, True)
