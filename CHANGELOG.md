@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.2.4 (2022-05-21)
+### Fix
+* Added integer to spark<->tf types_dict ([`98e8a2f`](https://github.com/amanas/dnarecords/commit/98e8a2f1adee8aebe47f847db29f093b5115607f))
+
 ## v0.2.3 (2022-05-21)
 ### Fix
 * Stop generating property names with chrchr ([`31a9172`](https://github.com/amanas/dnarecords/commit/31a917204422c54a9219f040f9a4f8d7546de66b))
