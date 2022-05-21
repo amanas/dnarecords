@@ -72,6 +72,7 @@ class DNARecordsReader:
     def _types_dict():
         import tensorflow as tf
         return {'long': tf.int64,
+                'integer': tf.int64,
                 'double': tf.float32}
 
     @staticmethod

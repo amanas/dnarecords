@@ -143,3 +143,6 @@ dmypy.json
 
 tests/wip.py
 dataproc-init-dev.sh
+tests/1kg.sh
+tests/1kg.py
+tests/dna-1kg.py
