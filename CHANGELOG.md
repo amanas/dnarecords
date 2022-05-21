@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.2.3 (2022-05-21)
+### Fix
+* Stop generating property names with chrchr ([`31a9172`](https://github.com/amanas/dnarecords/commit/31a917204422c54a9219f040f9a4f8d7546de66b))
+
 ## v0.2.2 (2022-05-20)
 ### Fix
 * Fixed scalability issues related with too many small files generated ([`b4ba095`](https://github.com/amanas/dnarecords/commit/b4ba09581e803f3117f5dba4ec5751ee939c03eb))
