@@ -127,7 +127,7 @@ class DNARecordsReader:
             if k == 'vkeys':
                 result.update({k: self._pandas_safe_read_parquet(v, vkeys_columns, taste)})
             if k in ['swpfs', 'vwpfs', 'swrfs', 'vwrfs']:
-                result.update({k: self._pandas_safe_read_parquet(v, None, False)})
+                result.update({k: self._pandas_safe_read_parquet(v, None, taste)})
             if k in ['swpsc', 'vwpsc', 'swrsc', 'vwrsc']:
                 result.update({k: self._pandas_safe_read_json(v)})
         return result
@@ -218,7 +218,7 @@ class DNARecordsReader:
         :rtype: tf.data.Dataset.
         """
         dnarecords = self.datafiles()['swrec']
-        schema = self.metadata()['swrsc']
+        schema = self.metadata(taste=True)['swrsc']
         if schema is None or not dnarecords:
             raise Exception(f"No DNARecords found at {self._dnarecords_path}/...")
         decoder = self._sw_decoder(dnarecords, schema, self._gzip)
@@ -244,7 +244,7 @@ class DNARecordsReader:
         :rtype: tf.data.Dataset.
         """
         dnarecords = self.datafiles()['vwrec']
-        schema = self.metadata()['vwrsc']
+        schema = self.metadata(taste=True)['vwrsc']
         if schema is None or not dnarecords:
             raise Exception(f"No DNARecords found at {self._dnarecords_path}/...")
         decoder = self._vw_decoder(dnarecords, schema, self._gzip)

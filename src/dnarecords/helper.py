@@ -35,6 +35,7 @@ class DNARecordsUtils:
         """
         import hail as hl
 
+        # TODO: do not make it idempotent to avoid potential collisions
         conf = {'spark.jars.packages': 'com.linkedin.sparktfrecord:spark-tfrecord_2.12:0.3.4'}
         hl.init(idempotent=True, log='/tmp/hail.log', spark_conf=conf)
         return hl
