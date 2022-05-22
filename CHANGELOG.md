@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.2.5 (2022-05-22)
+### Performance
+* Use metadata taste when building DNARecordsReader decoder ([`94785a9`](https://github.com/amanas/dnarecords/commit/94785a92cc014b68952dfbea8754e52236163fbe))
+
 ## v0.2.4 (2022-05-21)
 ### Fix
 * Added integer to spark<->tf types_dict ([`98e8a2f`](https://github.com/amanas/dnarecords/commit/98e8a2f1adee8aebe47f847db29f093b5115607f))
