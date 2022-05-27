@@ -43,7 +43,7 @@ def dosage_write_dnarecords_fn(expr: Expression, output: str) -> None:
 
 @pytest.fixture(autouse=True, scope='session')
 def dosage_write_dnarecords(dosage_1kg, dosage_output):
-    return dosage_write_dnarecords_fn(dosage_1kg.dosage, dosage_output)
+    dosage_write_dnarecords_fn(dosage_1kg.dosage, dosage_output)
 
 
 def dosage_dnaspark_reader_fn(output: str) -> dr.reader.DNASparkReader:

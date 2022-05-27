@@ -224,7 +224,7 @@ class DNARecordsWriter:
         df = spark.read.parquet(blocks_path).select('i', 'j', 'v')
         df = df.groupBy('i').agg(F.map_from_entries(F.collect_list(F.struct('j', 'v'))).alias('data'))
         schema = get_dna_schema(df)
-        mapper = self._to_dnarecord_variant_wise(self._nrows)
+        mapper = self._to_dnarecord_variant_wise(self._ncols - 1)
         df.rdd.mapPartitions(mapper).toDF(schema).repartition(1).write.mode('overwrite').parquet(output)
 
     def _build_dna_block_sample_wise(self, blocks_path, output, chrom_ranges):

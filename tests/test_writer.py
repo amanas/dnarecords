@@ -4,6 +4,7 @@ import pytest
 import dnarecords as dr
 import glob
 from itertools import groupby
+import numpy as np
 
 
 def check_dosage_sample_wise(skeys, vkeys, mt, dna, approx):
@@ -20,6 +21,11 @@ def check_dosage_sample_wise(skeys, vkeys, mt, dna, approx):
                                           for c in dna.columns if c != 'key'}
                                 for i, r in dna.filter(dna.key == int(skey)).toPandas().iterrows()
                                 for k, v in zip(r[f'chr{c}_indices'], r[f'chr{c}_values'])])
+
+    print('\ndense shape check')
+    df = dna.filter(dna.key == int(skey)).toPandas()
+    df = df[[col for col in df if col.endswith('dense_shape')]]
+    assert mt.count_rows() == np.sum(df.values), "dense_shapes error"
 
     print('\ntarget to source check')
     t2s = tgt_entries.merge(vkeys_df).merge(src_entries, on=['locus.contig', 'locus.position', 'alleles'])
@@ -51,6 +57,10 @@ def check_dosage_variant_wise(skeys, vkeys, mt, dna, approx):
     tgt_entries = pd.DataFrame([{'key': i, 'dosage': v}
                                 for i, r in dna.filter(dna.key == int(vkey)).toPandas().iterrows()
                                 for i, v in zip(r['indices'], r['values'])])
+
+    print('\ndense shape check')
+    df = dna.filter(dna.key == int(vkey)).toPandas()
+    assert mt.count_cols() == df.dense_shape[0], "dense_shapes error"
 
     print('\ntarget to source check')
     t2s = tgt_entries.merge(skeys_df).merge(src_entries, on=['s'])

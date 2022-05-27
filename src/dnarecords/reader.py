@@ -80,6 +80,7 @@ class DNARecordsReader:
         import pandas as pd
         import tensorflow as tf
 
+        # TODO: improve performance by reading in parallel
         files = tf.io.gfile.glob(f'{path}/*.parquet')
         if files:
             if columns:
@@ -95,13 +96,16 @@ class DNARecordsReader:
         return None
 
     @staticmethod
-    def _pandas_safe_read_json(path):
+    def _pandas_safe_read_json(path, taste):
         import pandas as pd
         import tensorflow as tf
 
         files = tf.io.gfile.glob(f'{path}/*.json')
         if files:
-            return pd.concat(pd.read_json(f) for f in files)
+            if taste:
+                return pd.read_json(files[0])
+            else:
+                return pd.concat(pd.read_json(f) for f in files)
         return None
 
     def metadata(self, vkeys_columns: List[str] = None, skeys_columns: List[str] = None, taste: bool = False) -> Dict[str, DataFrame]:
@@ -129,7 +133,7 @@ class DNARecordsReader:
             if k in ['swpfs', 'vwpfs', 'swrfs', 'vwrfs']:
                 result.update({k: self._pandas_safe_read_parquet(v, None, taste)})
             if k in ['swpsc', 'vwpsc', 'swrsc', 'vwrsc']:
-                result.update({k: self._pandas_safe_read_json(v)})
+                result.update({k: self._pandas_safe_read_json(v, taste)})
         return result
 
     def datafiles(self) -> Dict[str, List[str]]:
