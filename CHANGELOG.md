@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.2.6 (2022-05-27)
+### Fix
+* Fixed dense_shape error on variant_wise writer ([`523a8e6`](https://github.com/amanas/dnarecords/commit/523a8e6cce8779f9363e09533b1d3281481e1599))
+
 ## v0.2.5 (2022-05-22)
 ### Performance
 * Use metadata taste when building DNARecordsReader decoder ([`94785a9`](https://github.com/amanas/dnarecords/commit/94785a92cc014b68952dfbea8754e52236163fbe))
