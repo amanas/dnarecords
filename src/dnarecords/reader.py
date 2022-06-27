@@ -76,24 +76,23 @@ class DNARecordsReader:
                 'double': tf.float32}
 
     @staticmethod
-    def _pandas_safe_read_parquet(path, columns, taste):
+    def _pandas_parallel_read_parquet(files, columns):
+        from multiprocessing.pool import ThreadPool
+        import multiprocessing as ms
         import pandas as pd
-        import tensorflow as tf
 
-        # TODO: improve performance by reading in parallel
+        pool = ThreadPool(ms.cpu_count() - 1)
+        params = [[f, columns] for f in files]
+        result = pool.starmap(lambda f, c: pd.read_parquet(f, columns=c) if c else pd.read_parquet(f), params)
+        pool.close()
+        pool.join()
+        return pd.concat(result, ignore_index=True)
+
+    @staticmethod
+    def _pandas_safe_read_parquet(path, columns, taste):
+        import tensorflow as tf
         files = tf.io.gfile.glob(f'{path}/*.parquet')
-        if files:
-            if columns:
-                if taste:
-                    return pd.read_parquet(files[0], columns=columns)
-                else:
-                    return pd.concat(pd.read_parquet(f, columns=columns) for f in files)
-            if not columns:
-                if taste:
-                    return pd.read_parquet(files[0])
-                else:
-                    return pd.concat(pd.read_parquet(f) for f in files)
-        return None
+        return DNARecordsReader._pandas_parallel_read_parquet([files[0]] if taste else files, columns) if files else None
 
     @staticmethod
     def _pandas_safe_read_json(path, taste):
