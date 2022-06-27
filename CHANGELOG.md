@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.2.7 (2022-06-27)
+### Performance
+* Metadata reader implemented with parallel read ([`da4754f`](https://github.com/amanas/dnarecords/commit/da4754f61719269e1f84f27836029b5d7f3154a2))
+
 ## v0.2.6 (2022-05-27)
 ### Fix
 * Fixed dense_shape error on variant_wise writer ([`523a8e6`](https://github.com/amanas/dnarecords/commit/523a8e6cce8779f9363e09533b1d3281481e1599))
